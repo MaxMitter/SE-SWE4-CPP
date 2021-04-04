@@ -144,8 +144,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="buffer_event.h" />
     <ClInclude Include="event.h" />
+    <ClInclude Include="machine_a_event.h" />
+    <ClInclude Include="machine_b_event.h" />
+    <ClInclude Include="machine_event.h" />
+    <ClInclude Include="machine_sim.h" />
     <ClInclude Include="simulation.h" />
+    <ClInclude Include="sim_stats.h" />
+    <ClInclude Include="time_manipulation.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />

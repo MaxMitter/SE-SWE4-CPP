@@ -4,43 +4,60 @@
 #include "event.h"
 
 using prio_queue =	std::priority_queue<std::shared_ptr<event>,
-					std::vector<std::shared_ptr<event>,
-					std::allocator<std::shared_ptr<event>>>,
+					std::vector<std::shared_ptr<event>>,
 					eventComparator>;
 
 class simulation {
 	public:
-		simulation(unsigned int t = 0) : sim_time{ t } {
-			cur_time = 0;
+		simulation() = default;
+
+		simulation(const std::initializer_list<std::shared_ptr<event>> init_list) {
+			for (const auto& ev : init_list) {
+				active_queue.push(ev);
+			}
 		}
-
-		~simulation(){
-
-		}
-
-		void schedule_event(std::shared_ptr<event> new_event) {
+	
+		virtual void schedule_event(const std::shared_ptr<event>& new_event) {
 			active_queue.push(new_event);
 		}
 
-		void print_queue() {
-			int size = active_queue.size();
-			while (size-- > 0) {
-				std::cout << active_queue.top()->get_time();
-				active_queue.pop();
+		virtual void run(){
+			bool stopped = fire_event();
+			while (!stopped) {
+				stopped = fire_event();
+			}
+			stop();
+		}
+		
+		void step() {
+			if (fire_event()) {
+				stop();
 			}
 		}
 
-		void run(){
-			while (!active_queue.empty()) {
-				std::shared_ptr<event> next_event = active_queue.top();
-				cur_time = next_event->get_time();
-				next_event->processEvent();
-				active_queue.pop();
-			}
+		static void stop() {
+			std::cout << "[SIM] Stopping simulation." << std::endl;
 		}
 
-	private:
-		unsigned int sim_time;
-		unsigned int cur_time;
+	protected:
 		prio_queue active_queue;
+
+		virtual bool fire_event() {
+			if (active_queue.empty()) {
+				return true;
+			} else {
+				auto cur_event = active_queue.top();
+				std::cout << "[SIM][EVENT]: " << cur_event->name() << " [TIME] " << cur_event->get_time() << std::endl;
+				active_queue.pop();
+
+				std::vector<std::shared_ptr<event>> new_events = cur_event->process_event();
+				sim_time += cur_event->get_time();
+				for (const auto& ev : new_events) {
+					active_queue.push(ev);
+				}
+				return false;
+			}
+		}
+
+		unsigned int sim_time{ 0 };
 };
