@@ -4,8 +4,6 @@
 #include <string>
 #include <iomanip>
 
-enum class machine_state { none, idle, processing };
-
 class machine_simulation : public simulation {
 	public:
 	machine_simulation(unsigned int a_capacity, unsigned int puffer_capacity, unsigned int b_capacity)
@@ -18,33 +16,40 @@ class machine_simulation : public simulation {
 
 	void print_results() {
 		const int name_width = 15;
-		const int time_width = 10;
+		const int time_width = 15;
 		const char separator = ' ';
 		int total_a = 0;
 		int total_buffer = 0;
 		int total_b = 0;
+		int total_all = 0;
 		
-		std::cout << std::right << std::setw(name_width) << std::setfill(separator) << "Name"         << "|";
-		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << "Time spent A" << "|";
-		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << "Time Buffer " << "|";
-		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << "Time spent B" << "|";
+		std::cout << std::right << std::setw(name_width) << std::setfill(separator) << "Name"         << " |";
+		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << "Time spent A" << " |";
+		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << " Time Buffer" << " |";
+		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << "Time spent B" << " |";
+		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << "       Total" << " |";
 		std::cout << std::endl;
+		std::cout << std::right << std::setw(name_width + 5 * time_width) << std::setfill('-') << "-" << std::endl;
 		for (auto& prod : m_products) {
-			std::cout << std::right << std::setw(name_width) << std::setfill(separator) << prod.name << "|";
-			std::cout << std::right << std::setw(time_width) << std::setfill(separator) << prod.time_spent_a << "|";
-			std::cout << std::right << std::setw(time_width) << std::setfill(separator) << prod.time_spent_buffer - prod.time_spent_a << "|";
-			std::cout << std::right << std::setw(time_width) << std::setfill(separator) << prod.time_spent_b - prod.time_spent_buffer << "|";
+			int total = prod.time_spent_a + prod.time_spent_buffer + prod.time_spent_b;
+			std::cout << std::right << std::setw(name_width) << std::setfill(separator) << prod.name << " |";
+			std::cout << std::right << std::setw(time_width) << std::setfill(separator) << prod.time_spent_a << " |";
+			std::cout << std::right << std::setw(time_width) << std::setfill(separator) << prod.time_spent_buffer << " |";
+			std::cout << std::right << std::setw(time_width) << std::setfill(separator) << prod.time_spent_b << " |";
+			std::cout << std::right << std::setw(time_width) << std::setfill(separator) << total << " |";
 			std::cout << std::endl;
 
 			total_a += prod.time_spent_a;
-			total_buffer += prod.time_spent_buffer - prod.time_spent_a;
-			total_b += prod.time_spent_b - prod.time_spent_buffer;
+			total_buffer += prod.time_spent_buffer;
+			total_b += prod.time_spent_b;
+			total_all += total;
 		}
-
-		std::cout << std::right << std::setw(name_width) << std::setfill(separator) << "Averages" << "|";
-		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << double(total_a) / m_products.size() << "|";
-		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << double(total_buffer) / m_products.size() << "|";
-		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << double(total_b) / m_products.size() << "|";
+		std::cout << std::right << std::setw(name_width + 5 * time_width) << std::setfill('-') << "-" << std::endl;
+		std::cout << std::right << std::setw(name_width) << std::setfill(separator) << "Averages " << " |";
+		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << double(total_a) / m_products.size() << " |";
+		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << double(total_buffer) / m_products.size() << " |";
+		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << double(total_b) / m_products.size() << " |";
+		std::cout << std::right << std::setw(time_width) << std::setfill(separator) << double(total_all) / m_products.size() << " |";
 		std::cout << std::endl;
 	}
 
@@ -64,7 +69,7 @@ class machine_simulation : public simulation {
 		else {
 			auto cur_event = active_queue.top();
 			auto cur_machine_event = dynamic_pointer_cast<machine_event>(cur_event);
-			std::cout << "[SIM][EVENT]: " << cur_event->print_name() << " [TIME] " << cur_event->get_time() << std::endl;
+			//std::cout << "[SIM][EVENT]: " << cur_event->print_name() << " [TIME] " << cur_event->get_time() << std::endl;
 			active_queue.pop();
 
 			int prod_nr = find_product(cur_event->name());
@@ -78,15 +83,16 @@ class machine_simulation : public simulation {
 		}
 	}
 
-	bool a_is_idle() const { return a_state == machine_state::idle; }
-	bool b_is_idle() const { return b_state == machine_state::idle; }
-
 	bool a_has_capacity() const {
 		return machine_a_capacity > 0;
 	}
 	
 	bool b_has_capacity() const {
 		return machine_b_capacity > 0;
+	}
+
+	bool buffer_has_capacity() const {
+		return buffer_capacity > 0;
 	}
 
 	void a_start_processing(const int n = 1) {
@@ -130,7 +136,5 @@ class machine_simulation : public simulation {
 		unsigned int machine_a_capacity{};
 		unsigned int buffer_capacity{};
 		unsigned int machine_b_capacity{};
-		machine_state a_state{ machine_state::idle };
-		machine_state b_state{ machine_state::idle };
 		std::vector<product> m_products{};
 };
