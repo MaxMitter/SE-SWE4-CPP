@@ -15,7 +15,7 @@ public:
 	}
 
 	std::vector<std::shared_ptr<event>> process_event(product& prod) override {
-		prod.time_spent_b = time - prod.time_spent_buffer - prod.time_spent_a;
+		prod.time_spent_b = m_time - prod.time_spent_buffer - prod.time_spent_a;
 		return process_event();
 	}
 

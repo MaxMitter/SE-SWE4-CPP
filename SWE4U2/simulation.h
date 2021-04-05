@@ -3,9 +3,15 @@
 #include <iostream>
 #include "event.h"
 
+struct event_comparator {
+	bool operator() (const std::shared_ptr<event>& left, const std::shared_ptr<event>& right) const {
+		return (*left > *right);
+	}
+};
+
 using prio_queue =	std::priority_queue<std::shared_ptr<event>,
 					std::vector<std::shared_ptr<event>>,
-					eventComparator>;
+					event_comparator>;
 
 class simulation {
 	public:
@@ -16,12 +22,15 @@ class simulation {
 				active_queue.push(ev);
 			}
 		}
+
+		virtual ~simulation() = default;
 	
 		virtual void schedule_event(const std::shared_ptr<event>& new_event) {
 			active_queue.push(new_event);
 		}
 
 		virtual void run(){
+			std::cout << "[SIM] Starting simulation" << std::endl;
 			bool stopped = fire_event();
 			while (!stopped) {
 				stopped = fire_event();
@@ -30,7 +39,7 @@ class simulation {
 		}
 		
 		void step() {
-			if (fire_event()) {
+			if (fire_event(true)) {
 				stop();
 			}
 		}
@@ -40,18 +49,17 @@ class simulation {
 		}
 
 	protected:
-		prio_queue active_queue;
 
-		virtual bool fire_event() {
+		virtual bool fire_event(bool output = false) {
 			if (active_queue.empty()) {
 				return true;
 			} else {
 				auto cur_event = active_queue.top();
-				std::cout << "[SIM][EVENT]: " << cur_event->name() << " [TIME] " << cur_event->get_time() << std::endl;
+				if (output)
+					std::cout << "[SIM][EVENT]: " << cur_event->name() << " [TIME] " << cur_event->get_time() << std::endl;
 				active_queue.pop();
 
 				std::vector<std::shared_ptr<event>> new_events = cur_event->process_event();
-				sim_time += cur_event->get_time();
 				for (const auto& ev : new_events) {
 					active_queue.push(ev);
 				}
@@ -59,5 +67,5 @@ class simulation {
 			}
 		}
 
-		unsigned int sim_time{ 0 };
+		prio_queue active_queue;
 };

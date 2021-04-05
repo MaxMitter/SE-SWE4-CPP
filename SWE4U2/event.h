@@ -7,19 +7,21 @@ class event {
 	public:
 		event(std::string& name, std::time_t t = 1) 
 			: m_name{ name }
-			, time{ t } {}
+			, m_time{ t } {}
+
+		virtual ~event() = default;
 
 		friend bool operator< (const event& lhs, const event& rhs) {
-			return (lhs.time < rhs.time);
+			return (lhs.m_time < rhs.m_time);
 		}
 		friend bool operator> (const event& lhs, const event& rhs) {
-			return (lhs.time > rhs.time);
+			return (lhs.m_time > rhs.m_time);
 		}
 
 		virtual std::vector<std::shared_ptr<event>> process_event() = 0;
 
 		std::time_t get_time() const {
-			return time;
+			return m_time;
 		}
 
 		virtual std::string print_name() const {
@@ -32,11 +34,5 @@ class event {
 
 	protected:
 		std::string m_name;
-		std::time_t time;
-};
-
-struct eventComparator {
-	bool operator() (const std::shared_ptr<event>& left, const std::shared_ptr<event>& right) const {
-		return (*left > *right);
-	}
+		std::time_t m_time;
 };
